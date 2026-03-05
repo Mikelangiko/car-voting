@@ -77,12 +77,23 @@ export default function ResultsPage() {
       <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
         <div>
           <h1 style={{ margin: 0 }}>Результати голосування</h1>
-          <p style={{ marginTop: 6, color: "#666" }}>
-            Протокол + рейтинг. Дані беруться з Supabase.
-          </p>
-          <p style={{ marginTop: 6 }}>
-            <Link href="/" style={{ textDecoration: "underline" }}>← До голосування</Link>
-          </p>
+          
+          <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+  <Link
+    href="/"
+    style={{
+      display: "inline-block",
+      padding: "10px 14px",
+      borderRadius: 12,
+      border: "1px solid #ccc",
+      cursor: "pointer",
+      textDecoration: "none",
+      color: "inherit",
+    }}
+  >
+    ← До бюлетеня
+  </Link>
+</div>
         </div>
 
         <button
@@ -101,8 +112,7 @@ export default function ResultsPage() {
 
       {/* ПРОТОКОЛ */}
       <section style={{ border: "1px solid #ddd", borderRadius: 14, padding: 16, marginTop: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Протокол голосування</h2>
-        <p style={{ color: "#667", marginTop: 6 }}>Показано анонімно у вигляді псевдоніма експерта.</p>
+        <h2 style={{ marginTop: 0 }}>Результати голосування</h2>
 
         {loading ? (
           <p>Завантаження…</p>

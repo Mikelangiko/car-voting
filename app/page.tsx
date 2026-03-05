@@ -113,11 +113,24 @@ export default function Page() {
         <div>
           <h1 style={{ margin: 0 }}>Голосування за найкращий спорткар</h1>
           <p style={{ marginTop: 6, color: "#666" }}>
-            Обери ТОП-3. Анонімно, без логіну. Бали: 1 місце = 3, 2 = 2, 3 = 1.
+            Обери ТОП-3.
           </p>
-          <p style={{ marginTop: 6 }}>
-            <Link href="/results" style={{ textDecoration: "underline" }}>Перейти до результатів →</Link>
-          </p>
+          <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+  <Link
+    href="/results"
+    style={{
+      display: "inline-block",
+      padding: "10px 14px",
+      borderRadius: 12,
+      border: "1px solid #ccc",
+      cursor: "pointer",
+      textDecoration: "none",
+      color: "inherit",
+    }}
+  >
+    Перейти до результатів →
+  </Link>
+</div>
         </div>
 
         <button onClick={refresh} style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid #ccc", cursor: "pointer" }}>
