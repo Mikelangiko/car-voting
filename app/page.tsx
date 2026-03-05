@@ -38,19 +38,49 @@ export default function Page() {
 
   const canVote = useMemo(() => top.every((x) => x !== null) && new Set(top).size === 3, [top]);
 
-  async function refresh() {
-    setLoading(true);
+ async function safeJson(res: Response) {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return { status: "error", error: text || `HTTP ${res.status}` };
+  }
+}
 
-    const [resResults, resProtocol] = await Promise.all([fetch("/api/results"), fetch("/api/protocol")]);
+async function refresh() {
+  setLoading(true);
+  setMsg("");
 
-    const dataResults = await resResults.json();
-    const dataProtocol = await resProtocol.json();
+  try {
+    const [resResults, resProtocol] = await Promise.all([
+      fetch("/api/results", { cache: "no-store" }),
+      fetch("/api/protocol", { cache: "no-store" }),
+    ]);
 
-    setCars(Array.isArray(dataResults) ? dataResults : []);
-    setProtocol(Array.isArray(dataProtocol?.protocol) ? dataProtocol.protocol : []);
+    const dataResults = await safeJson(resResults);
+    const dataProtocol = await safeJson(resProtocol);
 
+    if (!resResults.ok) {
+      setCars([]);
+      setMsg(`Помилка /api/results: ${dataResults?.error || resResults.status}`);
+    } else {
+      setCars(Array.isArray(dataResults) ? dataResults : []);
+    }
+
+    if (!resProtocol.ok) {
+      setProtocol([]);
+      setMsg((prev) =>
+        prev
+          ? prev + ` | Помилка /api/protocol: ${dataProtocol?.error || resProtocol.status}`
+          : `Помилка /api/protocol: ${dataProtocol?.error || resProtocol.status}`
+      );
+    } else {
+      setProtocol(Array.isArray(dataProtocol?.protocol) ? dataProtocol.protocol : []);
+    }
+  } finally {
     setLoading(false);
   }
+}
 
   useEffect(() => {
     refresh();
