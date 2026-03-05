@@ -104,8 +104,14 @@ export default function Page() {
     else if (j.status === "already_voted") setMsg("Ти вже голосував з цього браузера 🙂");
     else setMsg("Помилка: " + (j.error || "unknown"));
 
-    await refresh();
+    await refreshSilent();
   }
+  async function refreshSilent() {
+  const resResults = await fetch("/api/results", { cache: "no-store" });
+  const dataResults = await safeJson(resResults);
+
+  if (resResults.ok) setCars(Array.isArray(dataResults) ? dataResults : []);
+}
 
   return (
     <main style={{ maxWidth: 1050, margin: "24px auto", padding: 16, fontFamily: "system-ui" }}>
