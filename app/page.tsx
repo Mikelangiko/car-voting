@@ -1,20 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 type CarRow = {
   id: number;
   name: string;
   year: number | null;
   points: number;
-};
-
-type ProtocolRow = {
-  expert: string;
-  first: string;
-  second: string;
-  third: string;
-  created_at?: string;
 };
 
 function getVoterToken(): string {
@@ -27,18 +20,7 @@ function getVoterToken(): string {
   return t;
 }
 
-export default function Page() {
-  const [cars, setCars] = useState<CarRow[]>([]);
-  const [protocol, setProtocol] = useState<ProtocolRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [msg, setMsg] = useState("");
-
-  // вибір трійки: [1 місце, 2 місце, 3 місце]
-  const [top, setTop] = useState<(number | null)[]>([null, null, null]);
-
-  const canVote = useMemo(() => top.every((x) => x !== null) && new Set(top).size === 3, [top]);
-
- async function safeJson(res: Response) {
+async function safeJson(res: Response) {
   const text = await res.text();
   try {
     return text ? JSON.parse(text) : null;
@@ -47,40 +29,34 @@ export default function Page() {
   }
 }
 
-async function refresh() {
-  setLoading(true);
-  setMsg("");
+export default function Page() {
+  const [cars, setCars] = useState<CarRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState("");
 
-  try {
-    const [resResults, resProtocol] = await Promise.all([
-      fetch("/api/results", { cache: "no-store" }),
-      fetch("/api/protocol", { cache: "no-store" }),
-    ]);
+  // вибір трійки: [1 місце, 2 місце, 3 місце]
+  const [top, setTop] = useState<(number | null)[]>([null, null, null]);
 
-    const dataResults = await safeJson(resResults);
-    const dataProtocol = await safeJson(resProtocol);
+  const canVote = useMemo(() => top.every((x) => x !== null) && new Set(top).size === 3, [top]);
 
-    if (!resResults.ok) {
-      setCars([]);
-      setMsg(`Помилка /api/results: ${dataResults?.error || resResults.status}`);
-    } else {
-      setCars(Array.isArray(dataResults) ? dataResults : []);
+  async function refresh() {
+    setLoading(true);
+    setMsg("");
+
+    try {
+      const resResults = await fetch("/api/results", { cache: "no-store" });
+      const dataResults = await safeJson(resResults);
+
+      if (!resResults.ok) {
+        setCars([]);
+        setMsg(`Помилка /api/results: ${dataResults?.error || resResults.status}`);
+      } else {
+        setCars(Array.isArray(dataResults) ? dataResults : []);
+      }
+    } finally {
+      setLoading(false);
     }
-
-    if (!resProtocol.ok) {
-      setProtocol([]);
-      setMsg((prev) =>
-        prev
-          ? prev + ` | Помилка /api/protocol: ${dataProtocol?.error || resProtocol.status}`
-          : `Помилка /api/protocol: ${dataProtocol?.error || resProtocol.status}`
-      );
-    } else {
-      setProtocol(Array.isArray(dataProtocol?.protocol) ? dataProtocol.protocol : []);
-    }
-  } finally {
-    setLoading(false);
   }
-}
 
   useEffect(() => {
     refresh();
@@ -90,15 +66,10 @@ async function refresh() {
     setMsg("");
     setTop((prev) => {
       const next = [...prev];
-
-      // якщо це авто вже вибране в іншому місці — прибираємо звідти
       for (let i = 0; i < 3; i++) {
         if (i !== rankIndex && next[i] === carId) next[i] = null;
       }
-
-      // перемикач: якщо натиснули те саме — зняти вибір
       next[rankIndex] = next[rankIndex] === carId ? null : carId;
-
       return next;
     });
   }
@@ -144,11 +115,21 @@ async function refresh() {
           <p style={{ marginTop: 6, color: "#666" }}>
             Обери ТОП-3. Анонімно, без логіну. Бали: 1 місце = 3, 2 = 2, 3 = 1.
           </p>
+          <p style={{ marginTop: 6 }}>
+            <Link href="/results" style={{ textDecoration: "underline" }}>Перейти до результатів →</Link>
+          </p>
         </div>
+
         <button onClick={refresh} style={{ padding: "10px 14px", borderRadius: 12, border: "1px solid #ccc", cursor: "pointer" }}>
-          Оновити дані
+          Оновити список
         </button>
       </header>
+
+      {msg && (
+        <p style={{ marginTop: 12, padding: 10, border: "1px solid #ddd", borderRadius: 12 }}>
+          {msg}
+        </p>
+      )}
 
       {/* БЮЛЕТЕНЬ */}
       <section style={{ border: "1px solid #ddd", borderRadius: 14, padding: 16, marginTop: 14 }}>
@@ -176,8 +157,6 @@ async function refresh() {
           >
             Проголосувати
           </button>
-
-          {msg && <span>{msg}</span>}
         </div>
       </section>
 
@@ -198,8 +177,6 @@ async function refresh() {
                       <div style={{ fontWeight: 800 }}>{c.name}</div>
                       <div style={{ color: "#666" }}>{c.year ?? ""}</div>
                     </div>
-
-                    {/* ✅ Прибрали "Бали" з індивідуальних карток */}
                   </div>
 
                   {badge && (
@@ -223,75 +200,6 @@ async function refresh() {
               );
             })}
           </div>
-        )}
-      </section>
-
-      {/* ПРОТОКОЛ ГОЛОСУВАННЯ (перед рейтингом) */}
-      <section style={{ border: "1px solid #ddd", borderRadius: 14, padding: 16, marginTop: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Протокол голосування</h2>
-        <p style={{ color: "#667", marginTop: 6 }}>Показано анонімно у вигляді псевдоніма експерта.</p>
-
-        {loading ? (
-          <p>Завантаження…</p>
-        ) : protocol.length === 0 ? (
-          <p>Поки що немає голосів.</p>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>#</th>
-                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Експерт</th>
-                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>1 місце</th>
-                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>2 місце</th>
-                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>3 місце</th>
-              </tr>
-            </thead>
-            <tbody>
-              {protocol.map((p, idx) => (
-                <tr key={p.expert}>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f2f2f2" }}>{idx + 1}</td>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f2f2f2", fontFamily: "monospace" }}>
-                    {p.expert}
-                  </td>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f2f2f2" }}>{p.first || ""}</td>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f2f2f2" }}>{p.second || ""}</td>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f2f2f2" }}>{p.third || ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
-
-      {/* РЕЙТИНГ */}
-      <section style={{ border: "1px solid #ddd", borderRadius: 14, padding: 16, marginTop: 14 }}>
-        <h2 style={{ marginTop: 0 }}>Рейтинг (відсортовано за балами)</h2>
-
-        {loading ? (
-          <p>Завантаження…</p>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Місце</th>
-                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Авто</th>
-                <th style={{ width: 90, padding: 10, borderBottom: "1px solid #eee" }}>Бали</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cars.map((c, idx) => (
-                <tr key={c.id}>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f2f2f2" }}>{idx + 1}</td>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f2f2f2" }}>
-                    {c.name} {c.year ? `(${c.year})` : ""}
-                  </td>
-                  <td style={{ padding: 10, textAlign: "center", borderBottom: "1px solid #f2f2f2" }}>
-                    <b>{c.points}</b>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         )}
       </section>
     </main>
