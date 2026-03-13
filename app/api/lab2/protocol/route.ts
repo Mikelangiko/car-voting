@@ -11,12 +11,15 @@ const HEURISTICS = [
   { id: 2, code: "E2", title: "Участь в одному множинному порівнянні на 2 місці" },
   { id: 3, code: "E3", title: "Участь в одному множинному порівнянні на 1 місці" },
   { id: 4, code: "E4", title: "Участь у двох множинних порівняннях на 3 місці" },
-  { id: 5, code: "E5", title: "Участь в одному МП на 3 місці та ще в одному — на 2 місці" },
+  { id: 5, code: "E5", title: "Участь в одному порівнянні на 3 місці та ще в одному — на 2 місці" },
   { id: 6, code: "E6", title: "Об’єкт жодного разу не посідав 1 місце" },
   { id: 7, code: "E7", title: "Об’єкт згадувався лише один раз незалежно від позиції" },
 ];
 
-const HEURISTIC_MAP = new Map(HEURISTICS.map((h) => [h.id, h.code]));
+const HEURISTIC_MAP = new Map(
+  HEURISTICS.map((h) => [h.id, h.code])
+);
+
 
 type ProtocolRow = {
   expert: string;
@@ -52,9 +55,9 @@ export async function GET() {
       const token = String(r.voter_token);
       const rank = Number(r.rank);
       const createdAt = String(r.created_at ?? "");
-      const heuristicCode =
+      const heuristicText =
         HEURISTIC_MAP.get(Number(r.heuristic_id)) ??
-        `E${String(r.heuristic_id)}`;
+        `Евристика ${String(r.heuristic_id)}`;
 
       if (!map.has(token)) {
         map.set(token, {
@@ -68,9 +71,9 @@ export async function GET() {
 
       const item = map.get(token)!;
 
-      if (rank === 1) item.first = heuristicCode;
-      if (rank === 2) item.second = heuristicCode;
-      if (rank === 3) item.third = heuristicCode;
+      if (rank === 1) item.first = heuristicText;
+      if (rank === 2) item.second = heuristicText;
+      if (rank === 3) item.third = heuristicText;
 
       if (createdAt && (!item.created_at || createdAt < item.created_at)) {
         item.created_at = createdAt;
