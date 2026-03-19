@@ -20,6 +20,12 @@ function getVoterToken(): string {
   return t;
 }
 
+function createBallotToken(): string {
+  const browserToken = getVoterToken();
+  const ballotId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+  return `${browserToken}:${ballotId}`;
+}
+
 async function safeJson(res: Response) {
   const text = await res.text();
   try {
@@ -102,7 +108,7 @@ export default function Lab2Page() {
       return;
     }
 
-    const voterToken = getVoterToken();
+    const voterToken = createBallotToken();
     const [first, second, third] = top as number[];
 
     try {

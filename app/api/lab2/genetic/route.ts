@@ -13,22 +13,26 @@ type CarDbRow = {
   year: number | null;
 };
 
-type VoteDbRow = {
-  car_id: number;
-  rank: number;
-};
+function createRng(seed: number) {
+  let state = seed >>> 0;
+
+  return () => {
+    state += 0x6d2b79f5;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const seedParam = searchParams.get("seed");
     const parsedSeed = seedParam ? Number(seedParam) : undefined;
-    const seedOverride = Number.isFinite(parsedSeed) ? parsedSeed : undefined;
+    const seedOverride = Number.isFinite(parsedSeed) ? parsedSeed : Date.now();
 
-    const [{ data: cars, error: carsError }, { data: votes, error: votesError }] = await Promise.all([
-      supabase.from("cars").select("*"),
-      supabase.from("votes").select("car_id, rank"),
-    ]);
+    const { data: cars, error: carsError } = await supabase.from("cars").select("*");
 
     if (carsError) {
       return Response.json(
@@ -37,36 +41,14 @@ export async function GET(request: Request) {
       );
     }
 
-    if (votesError) {
-      return Response.json(
-        { status: "error", error: votesError.message },
-        { status: 500 }
-      );
-    }
-
-    const score: Record<number, number> = {};
-
-    for (const car of (cars ?? []) as CarDbRow[]) {
-      score[car.id] = 0;
-    }
-
-    for (const vote of (votes ?? []) as VoteDbRow[]) {
-      const carId = Number(vote.car_id);
-      const rank = Number(vote.rank);
-
-      if (!(carId in score)) continue;
-
-      if (rank === 1) score[carId] += 3;
-      if (rank === 2) score[carId] += 2;
-      if (rank === 3) score[carId] += 1;
-    }
+    const rng = createRng(seedOverride);
 
     const rankedCars: RankedCar[] = ((cars ?? []) as CarDbRow[])
       .map((car) => ({
         id: car.id,
         name: car.name,
         year: car.year ?? null,
-        points: score[car.id] ?? 0,
+        points: Math.round((20 + rng() * 80) * 100) / 100,
       }))
       .sort((a, b) => b.points - a.points || a.id - b.id);
 

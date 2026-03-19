@@ -45,23 +45,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: existing, error: existingError } = await supabase
-      .from("heuristic_votes")
-      .select("id")
-      .eq("voter_token", String(voterToken))
-      .limit(1);
-
-    if (existingError) {
-      return Response.json(
-        { status: "error", error: existingError.message },
-        { status: 500 }
-      );
-    }
-
-    if ((existing ?? []).length > 0) {
-      return Response.json({ status: "already_voted" });
-    }
-
     const { error } = await supabase.from("heuristic_votes").insert([
       { voter_token: String(voterToken), heuristic_id: ids[0], rank: 1 },
       { voter_token: String(voterToken), heuristic_id: ids[1], rank: 2 },

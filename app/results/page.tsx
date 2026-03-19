@@ -8,6 +8,10 @@ type CarRow = {
   name: string;
   year: number | null;
   points: number;
+  firstVotes: number;
+  secondVotes: number;
+  thirdVotes: number;
+  totalVotes: number;
 };
 
 type ProtocolRow = {
@@ -414,6 +418,72 @@ export default function ResultsPage() {
                       </td>
                       <td style={{ padding: 10, textAlign: "center", borderBottom: "1px solid #f2f2f2" }}>
                         <b>{c.points}</b>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+
+          <section style={{ border: "1px solid #ddd", borderRadius: 14, padding: 16, marginTop: 14 }}>
+            <h2 style={{ marginTop: 0 }}>Лабораторна 1 — структура голосів по авто</h2>
+
+            {loading ? (
+              <p>Завантаження…</p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Авто</th>
+                    <th style={{ padding: 10, borderBottom: "1px solid #eee" }}>1 місце</th>
+                    <th style={{ padding: 10, borderBottom: "1px solid #eee" }}>2 місце</th>
+                    <th style={{ padding: 10, borderBottom: "1px solid #eee" }}>3 місце</th>
+                    <th style={{ padding: 10, borderBottom: "1px solid #eee" }}>Всього голосів</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cars.map((c, idx) => (
+                    <tr key={`stats-${c.id}`}>
+                      <td style={{ padding: 10, borderBottom: idx === cars.length - 1 ? "none" : "1px solid #f2f2f2" }}>
+                        {c.name} {c.year ? `(${c.year})` : ""}
+                      </td>
+                      <td
+                        style={{
+                          padding: 10,
+                          textAlign: "center",
+                          borderBottom: idx === cars.length - 1 ? "none" : "1px solid #f2f2f2",
+                        }}
+                      >
+                        {c.firstVotes}
+                      </td>
+                      <td
+                        style={{
+                          padding: 10,
+                          textAlign: "center",
+                          borderBottom: idx === cars.length - 1 ? "none" : "1px solid #f2f2f2",
+                        }}
+                      >
+                        {c.secondVotes}
+                      </td>
+                      <td
+                        style={{
+                          padding: 10,
+                          textAlign: "center",
+                          borderBottom: idx === cars.length - 1 ? "none" : "1px solid #f2f2f2",
+                        }}
+                      >
+                        {c.thirdVotes}
+                      </td>
+                      <td
+                        style={{
+                          padding: 10,
+                          textAlign: "center",
+                          borderBottom: idx === cars.length - 1 ? "none" : "1px solid #f2f2f2",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {c.totalVotes}
                       </td>
                     </tr>
                   ))}
