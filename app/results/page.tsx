@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -39,6 +39,35 @@ type FinalistRow = {
   year?: number | null;
 };
 
+type ImportanceIndexRow = {
+  id: number;
+  name: string;
+  year: number | null;
+  points: number;
+  rank: number;
+  importanceIndex: number;
+};
+
+type GeneticRatingRow = {
+  setId: number;
+  fitness: number;
+  bestCarId: number;
+  bestCarName: string;
+  top3: string[];
+  scores: number[];
+};
+
+type GeneticVariantView = {
+  setId: number;
+  fitness: number;
+  rankedCars: {
+    carId: number;
+    name: string;
+    year: number | null;
+    score: number;
+  }[];
+};
+
 type Lab2FinalistsResponse = {
   status?: string;
   finalists?: FinalistRow[];
@@ -58,6 +87,10 @@ async function safeJson(res: Response) {
   } catch {
     return { status: "error", error: text || `HTTP ${res.status}` };
   }
+}
+
+function optionalFetch(url: string): Promise<Response | null> {
+  return fetch(url, { cache: "no-store" }).catch(() => null);
 }
 
 const fallbackHeuristicResults: HeuristicResultRow[] = [
@@ -84,21 +117,41 @@ export default function ResultsPage() {
   const [lab2Steps, setLab2Steps] = useState<
     { code: string; title: string; before: number; after: number; removed: number }[]
   >([]);
+  const [importanceTable, setImportanceTable] = useState<ImportanceIndexRow[]>([]);
+  const [geneticRatings, setGeneticRatings] = useState<GeneticRatingRow[]>([]);
+  const [geneticSeed, setGeneticSeed] = useState(() => Date.now());
 
-  const lab1Top10 = useMemo(() => cars.slice(0, 10), [cars]);
+  const geneticVariantViews = useMemo<GeneticVariantView[]>(
+    () =>
+      geneticRatings.map((row) => ({
+        setId: row.setId,
+        fitness: row.fitness,
+        rankedCars: row.scores
+          .map((score, index) => ({
+            carId: importanceTable[index]?.id ?? index,
+            name: importanceTable[index]?.name ?? `Авто ${index + 1}`,
+            year: importanceTable[index]?.year ?? null,
+            score,
+          }))
+          .sort((a, b) => b.score - a.score || a.carId - b.carId)
+          .slice(0, 10),
+      })),
+    [geneticRatings, importanceTable]
+  );
 
   async function refresh() {
     setLoading(true);
     setMsg("");
 
     try {
-      const [resResults, resProtocol, resLab2Results, resLab2Protocol, resLab2Finalists] =
+      const [resResults, resProtocol, resLab2Results, resLab2Protocol, resLab2Finalists, resLab2Genetic] =
         await Promise.all([
           fetch("/api/results", { cache: "no-store" }),
           fetch("/api/protocol", { cache: "no-store" }),
-          fetch("/api/lab2/results", { cache: "no-store" }).catch(() => null as any),
-          fetch("/api/lab2/protocol", { cache: "no-store" }).catch(() => null as any),
-          fetch("/api/lab2/finalists", { cache: "no-store" }).catch(() => null as any),
+          optionalFetch("/api/lab2/results"),
+          optionalFetch("/api/lab2/protocol"),
+          optionalFetch("/api/lab2/finalists"),
+          optionalFetch(`/api/lab2/genetic?seed=${geneticSeed}`),
         ]);
 
       const dataResults = await safeJson(resResults);
@@ -162,6 +215,24 @@ export default function ResultsPage() {
         setLab2Finalists([]);
         setLab2Steps([]);
       }
+
+      if (resLab2Genetic && "ok" in resLab2Genetic) {
+        const dataLab2Genetic = await safeJson(resLab2Genetic);
+        if (resLab2Genetic.ok) {
+          setImportanceTable(
+            Array.isArray(dataLab2Genetic?.importanceTable) ? dataLab2Genetic.importanceTable : []
+          );
+          setGeneticRatings(
+            Array.isArray(dataLab2Genetic?.generatedRatings) ? dataLab2Genetic.generatedRatings : []
+          );
+        } else {
+          setImportanceTable([]);
+          setGeneticRatings([]);
+        }
+      } else {
+        setImportanceTable([]);
+        setGeneticRatings([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -169,7 +240,7 @@ export default function ResultsPage() {
 
   useEffect(() => {
     refresh();
-  }, []);
+  }, [geneticSeed]);
 
   return (
     <main style={{ maxWidth: 1120, margin: "24px auto", padding: 16, fontFamily: "system-ui" }}>
@@ -616,6 +687,170 @@ export default function ResultsPage() {
                     Фінальна підмножина поки не показується, бо API для автоматичного відсіювання ще не підключений.
                   </p>
                 )}
+              </>
+            )}
+          </section>
+
+          <section style={{ padding: "8px 0", marginTop: 18 }}>
+            <h2 style={{ marginTop: 0 }}>Індекси важливості авто з ЛР1</h2>
+
+            {loading ? (
+              <p>Завантаження...</p>
+            ) : importanceTable.length === 0 ? (
+              <p style={{ color: "#666" }}>
+                Таблиця індексів важливості з&apos;явиться після завантаження даних із першої лабораторної.
+              </p>
+            ) : (
+              <div
+                style={{
+                  overflowX: "auto",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: 14,
+                  background: "#000000",
+                }}
+              >
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: "left", padding: "14px 12px", borderBottom: "1px solid #e6e6e6" }}>
+                        Місце
+                      </th>
+                      <th style={{ textAlign: "left", padding: "14px 12px", borderBottom: "1px solid #e6e6e6" }}>
+                        Автомобіль
+                      </th>
+                      <th style={{ textAlign: "left", padding: "14px 12px", borderBottom: "1px solid #e6e6e6" }}>
+                        Бали ЛР1
+                      </th>
+                      <th style={{ textAlign: "left", padding: "14px 12px", borderBottom: "1px solid #e6e6e6" }}>
+                        Індекс важливості
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importanceTable.map((row, idx) => (
+                      <tr key={row.id}>
+                        <td
+                          style={{
+                            padding: "14px 12px",
+                            borderBottom: idx === importanceTable.length - 1 ? "none" : "1px solid #efefef",
+                          }}
+                        >
+                          {row.rank}
+                        </td>
+                        <td
+                          style={{
+                            padding: "14px 12px",
+                            borderBottom: idx === importanceTable.length - 1 ? "none" : "1px solid #efefef",
+                          }}
+                        >
+                          {row.name} {row.year ? `(${row.year})` : ""}
+                        </td>
+                        <td
+                          style={{
+                            padding: "14px 12px",
+                            borderBottom: idx === importanceTable.length - 1 ? "none" : "1px solid #efefef",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {row.points}
+                        </td>
+                        <td
+                          style={{
+                            padding: "14px 12px",
+                            borderBottom: idx === importanceTable.length - 1 ? "none" : "1px solid #efefef",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {row.importanceIndex}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section style={{ padding: "8px 0", marginTop: 18 }}>
+            <h2 style={{ marginTop: 0 }}>40 рейтингів після генетичного алгоритму</h2>
+
+            {loading ? (
+              <p>Завантаження...</p>
+            ) : geneticVariantViews.length === 0 ? (
+              <p style={{ color: "#666" }}>Результати генетичного алгоритму поки не отримані.</p>
+            ) : (
+              <>
+                <div style={{ marginBottom: 14 }}>
+                  <button
+                    onClick={() => setGeneticSeed(Date.now())}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 12,
+                      border: "1px solid #ccc",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Перерахувати генетичний алгоритм
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    overflowX: "auto",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: 14,
+                    background: "#000000",
+                  }}
+                >
+                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 3200 }}>
+                    <thead>
+                      <tr>
+                        {geneticVariantViews.map((variant, idx) => (
+                          <th
+                            key={variant.setId}
+                            style={{
+                              textAlign: "left",
+                              verticalAlign: "top",
+                              padding: "14px 12px",
+                              borderBottom: "1px solid #e6e6e6",
+                              borderRight: idx === geneticVariantViews.length - 1 ? "none" : "1px solid #efefef",
+                              minWidth: 220,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            Варіант {variant.setId} (score: {variant.fitness})
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: 10 }, (_, rankIndex) => (
+                        <tr key={rankIndex}>
+                          {geneticVariantViews.map((variant, variantIndex) => {
+                            const car = variant.rankedCars[rankIndex];
+
+                            return (
+                              <td
+                                key={`${variant.setId}-${rankIndex}`}
+                                style={{
+                                  padding: "12px",
+                                  borderBottom: rankIndex === 9 ? "none" : "1px solid #efefef",
+                                  borderRight:
+                                    variantIndex === geneticVariantViews.length - 1 ? "none" : "1px solid #efefef",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {car
+                                  ? `${rankIndex + 1}. ${car.carId}. ${car.name}${car.year ? ` (${car.year})` : ""}`
+                                  : ""}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </>
             )}
           </section>
