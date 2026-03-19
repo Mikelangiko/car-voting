@@ -6,17 +6,18 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const HEURISTICS = [
-  { id: 1, code: "E1", title: "Участь в одному множинному порівнянні на 3 місці" },
-  { id: 2, code: "E2", title: "Участь в одному множинному порівнянні на 2 місці" },
-  { id: 3, code: "E3", title: "Участь в одному множинному порівнянні на 1 місці" },
-  { id: 4, code: "E4", title: "Участь у двох множинних порівняннях на 3 місці" },
-  { id: 5, code: "E5", title: "Участь в одному МП на 3 місці та ще в одному — на 2 місці" },
-  { id: 6, code: "E6", title: "Об’єкт жодного разу не посідав 1 місце" },
-  { id: 7, code: "E7", title: "Об’єкт згадувався лише один раз незалежно від позиції" },
-];
+type CarRow = {
+  id: number;
+  name: string;
+  year: number | null;
+};
 
-const HEURISTIC_MAP = new Map(HEURISTICS.map((h) => [h.id, h.code]));
+type VoteRow = {
+  voter_token: string;
+  car_id: number;
+  rank: number;
+  created_at: string | null;
+};
 
 type ProtocolRow = {
   expert: string;
@@ -33,31 +34,35 @@ function expertAlias(token: string) {
 
 export async function GET() {
   try {
-    const { data, error } = await supabase
-      .from("heuristic_votes")
-      .select("voter_token, heuristic_id, rank, created_at")
-      .order("created_at", { ascending: true });
+    const [{ data: cars, error: carsError }, { data: votes, error: votesError }] = await Promise.all([
+      supabase.from("cars").select("id, name, year"),
+      supabase.from("votes").select("voter_token, car_id, rank, created_at").order("created_at", { ascending: true }),
+    ]);
 
-    if (error) {
-      return Response.json(
-        { status: "error", error: error.message },
-        { status: 500 }
-      );
+    if (carsError) {
+      return Response.json({ status: "error", error: carsError.message }, { status: 500 });
     }
 
-    const rows = (data ?? []) as any[];
-    const map = new Map<string, ProtocolRow>();
+    if (votesError) {
+      return Response.json({ status: "error", error: votesError.message }, { status: 500 });
+    }
 
-    for (const r of rows) {
-      const token = String(r.voter_token);
-      const rank = Number(r.rank);
-      const createdAt = String(r.created_at ?? "");
-      const heuristicCode =
-        HEURISTIC_MAP.get(Number(r.heuristic_id)) ??
-        `E${String(r.heuristic_id)}`;
+    const carMap = new Map<number, string>();
 
-      if (!map.has(token)) {
-        map.set(token, {
+    for (const car of (cars ?? []) as CarRow[]) {
+      carMap.set(car.id, `${car.name}${car.year ? ` (${car.year})` : ""}`);
+    }
+
+    const protocolMap = new Map<string, ProtocolRow>();
+
+    for (const vote of (votes ?? []) as VoteRow[]) {
+      const token = String(vote.voter_token);
+      const rank = Number(vote.rank);
+      const createdAt = String(vote.created_at ?? "");
+      const carLabel = carMap.get(Number(vote.car_id)) ?? `Авто ${String(vote.car_id)}`;
+
+      if (!protocolMap.has(token)) {
+        protocolMap.set(token, {
           expert: expertAlias(token),
           first: "",
           second: "",
@@ -66,25 +71,25 @@ export async function GET() {
         });
       }
 
-      const item = map.get(token)!;
+      const item = protocolMap.get(token)!;
 
-      if (rank === 1) item.first = heuristicCode;
-      if (rank === 2) item.second = heuristicCode;
-      if (rank === 3) item.third = heuristicCode;
+      if (rank === 1) item.first = carLabel;
+      if (rank === 2) item.second = carLabel;
+      if (rank === 3) item.third = carLabel;
 
       if (createdAt && (!item.created_at || createdAt < item.created_at)) {
         item.created_at = createdAt;
       }
     }
 
-    const protocol = Array.from(map.values()).sort((a, b) =>
+    const protocol = Array.from(protocolMap.values()).sort((a, b) =>
       (a.created_at || "").localeCompare(b.created_at || "")
     );
 
     return Response.json({ status: "ok", protocol });
-  } catch (e: any) {
+  } catch (e: unknown) {
     return Response.json(
-      { status: "error", error: String(e?.message || e) },
+      { status: "error", error: e instanceof Error ? e.message : String(e) },
       { status: 500 }
     );
   }

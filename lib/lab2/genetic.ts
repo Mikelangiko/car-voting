@@ -30,7 +30,7 @@ type Chromosome = {
 };
 
 const POPULATION_SIZE = 40;
-const GENERATIONS = 18;
+const GENERATIONS = 30;
 const ELITE_COUNT = 8;
 const MUTATION_RATE = 0.14;
 
