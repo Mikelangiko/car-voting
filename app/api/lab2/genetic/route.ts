@@ -30,7 +30,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const seedParam = searchParams.get("seed");
     const parsedSeed = seedParam ? Number(seedParam) : undefined;
-    const seedOverride = Number.isFinite(parsedSeed) ? parsedSeed : Date.now();
+    const seedOverride =
+      parsedSeed !== undefined && Number.isFinite(parsedSeed)
+        ? parsedSeed
+        : Date.now();
 
     const { data: cars, error: carsError } = await supabase.from("cars").select("*");
 
