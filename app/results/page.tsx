@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
+import IndependentSolutionsTable from "@/app/components/IndependentSolutionsTable";
+
 type CarRow = {
   id: number;
   name: string;
@@ -843,6 +845,10 @@ export default function ResultsPage() {
                 </div>
               </>
             )}
+          </section>
+
+          <section style={{ padding: "8px 0", marginTop: 24 }}>
+            <IndependentSolutionsTable />
           </section>
         </>
       )}
