@@ -1,0 +1,32 @@
+{
+  "objects": [
+    { "id": 1, "name": "Audi R8 V10 Performance", "year": 2023 },
+    { "id": 2, "name": "Ferrari F8 Tributo", "year": 2022 },
+    { "id": 3, "name": "Porsche 911 Turbo S", "year": 2024 },
+    { "id": 4, "name": "Chevrolet Corvette Z06", "year": 2024 },
+    { "id": 5, "name": "BMW M4 Competition", "year": 2024 },
+    { "id": 6, "name": "Aston Martin DBS Superleggera", "year": 2022 },
+    { "id": 7, "name": "Nissan GT-R Nismo", "year": 2024 },
+    { "id": 8, "name": "Toyota GR Supra", "year": 2024 },
+    { "id": 9, "name": "Aston Martin Vantage", "year": 2024 },
+    { "id": 10, "name": "Ford Mustang Shelby GT500", "year": 2022 }
+  ],
+  "experts": [
+    { "expertId": 1, "first": 3, "second": 2, "third": 1 },
+    { "expertId": 2, "first": 1, "second": 3, "third": 4 },
+    { "expertId": 3, "first": 2, "second": 3, "third": 5 },
+    { "expertId": 4, "first": 3, "second": 5, "third": 4 },
+    { "expertId": 5, "first": 4, "second": 3, "third": 2 },
+    { "expertId": 6, "first": 5, "second": 4, "third": 6 },
+    { "expertId": 7, "first": 3, "second": 1, "third": 7 },
+    { "expertId": 8, "first": 7, "second": 3, "third": 5 },
+    { "expertId": 9, "first": 2, "second": 1, "third": 8 },
+    { "expertId": 10, "first": 3, "second": 4, "third": 9 },
+    { "expertId": 11, "first": 1, "second": 2, "third": 10 },
+    { "expertId": 12, "first": 5, "second": 7, "third": 3 },
+    { "expertId": 13, "first": 4, "second": 2, "third": 6 },
+    { "expertId": 14, "first": 3, "second": 8, "third": 1 },
+    { "expertId": 15, "first": 9, "second": 4, "third": 2 },
+    { "expertId": 16, "first": 10, "second": 1, "third": 3 }
+  ]
+}
