@@ -518,7 +518,7 @@ export default function ResultsPage() {
                     overflowX: "auto",
                     border: "1px solid #d9d9d9",
                     borderRadius: 14,
-                    background: "#000000",
+                    background: "#ffffff",
                   }}
                 >
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -539,7 +539,7 @@ export default function ResultsPage() {
                             style={{
                               padding: "16px 18px",
                               borderBottom: idx === lab2Protocol.length - 1 ? "none" : "1px solid #ececec",
-                              color: "#ffffff",
+                              color: "#171717",
                             }}
                           >
                             {[p.first, p.second, p.third].filter(Boolean).join(", ")}
@@ -564,12 +564,12 @@ export default function ResultsPage() {
                   overflowX: "auto",
                   border: "1px solid #d9d9d9",
                   borderRadius: 14,
-                  background: "#000000",
+                  background: "#ffffff",
                 }}
               >
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr style={{ background: "#000000" }}>
+                    <tr style={{ background: "#f7f8fc" }}>
                       <th
                         style={{
                           textAlign: "left",
@@ -649,7 +649,7 @@ export default function ResultsPage() {
                   Застосовано топ-3 евристики:{" "}
                   <span
                     style={{
-                      background: "#000000",
+                      background: "#eef2ff",
                       padding: "4px 8px",
                       borderRadius: 8,
                     }}
@@ -664,13 +664,13 @@ export default function ResultsPage() {
                       overflowX: "auto",
                       border: "1px solid #d9d9d9",
                       borderRadius: 14,
-                      background: "#000000",
+                      background: "#ffffff",
                       marginBottom: 16,
                     }}
                   >
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
                       <thead>
-                        <tr style={{ background: "#000000" }}>
+                        <tr style={{ background: "#f7f8fc" }}>
                           <th style={{ textAlign: "left", padding: "14px 12px", borderBottom: "1px solid #e6e6e6" }}>
                             Евристика
                           </th>
@@ -733,7 +733,7 @@ export default function ResultsPage() {
                       overflowX: "auto",
                       border: "1px solid #d9d9d9",
                       borderRadius: 14,
-                      background: "#000000",
+                      background: "#ffffff",
                     }}
                   >
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -791,7 +791,7 @@ export default function ResultsPage() {
                     overflowX: "auto",
                     border: "1px solid #d9d9d9",
                     borderRadius: 14,
-                    background: "#000000",
+                    background: "#ffffff",
                   }}
                 >
                   <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 3200 }}>

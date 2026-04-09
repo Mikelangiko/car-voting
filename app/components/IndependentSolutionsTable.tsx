@@ -21,14 +21,8 @@ export default function IndependentSolutionsTable() {
       >
         <div>
           <h2 style={{ marginTop: 0, marginBottom: 8 }}>Знайдені незалежні розв&apos;язки</h2>
-          <p style={{ marginTop: 0, color: "#666", lineHeight: 1.6, maxWidth: 860 }}>
-            Додатковий фінальний блок ЛР2 з ранжуваннями для автомобілів. Тут показано всі унікальні
-            розв&apos;язки, які мають найкраще значення для критерію K1 або K2.
-          </p>
-          <p style={{ marginTop: 8, marginBottom: 0, color: "#666" }}>
-            seed: <b>{data.meta.seed}</b>, експертів: <b>{data.meta.expertsCount}</b>, об&apos;єктів:{" "}
-            <b>{data.meta.objectsCount}</b>, популяція: <b>{data.meta.populationSize}</b>, покоління:{" "}
-            <b>{data.meta.generations}</b>
+          <p style={{ marginTop: 0, marginBottom: 0, color: "#666" }}>
+            seed: <b>{data.meta.seed}</b>
           </p>
         </div>
 
@@ -53,7 +47,7 @@ export default function IndependentSolutionsTable() {
             overflowX: "auto",
             border: "1px solid #d9d9d9",
             borderRadius: 14,
-            background: "#000000",
+            background: "#ffffff",
           }}
         >
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -74,7 +68,7 @@ export default function IndependentSolutionsTable() {
                     style={{
                       padding: "16px 18px",
                       borderBottom: index === data.expertRankings.length - 1 ? "none" : "1px solid #ececec",
-                      color: "#ffffff",
+                      color: "#171717",
                     }}
                   >
                     {row.ranking.join(" → ")}
@@ -94,12 +88,12 @@ export default function IndependentSolutionsTable() {
             overflowX: "auto",
             border: "1px solid #d9d9d9",
             borderRadius: 14,
-            background: "#000000",
+            background: "#ffffff",
           }}
         >
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 920 }}>
             <thead>
-              <tr style={{ background: "#000000" }}>
+              <tr style={{ background: "#f7f8fc" }}>
                 <th style={{ textAlign: "left", padding: "14px 12px", borderBottom: "1px solid #e6e6e6", width: 60 }}>
                   #
                 </th>
@@ -160,19 +154,19 @@ export default function IndependentSolutionsTable() {
                       >
                         {left ? (
                           <>
-                            <div style={{ color: "#ffffff", lineHeight: 1.6, fontWeight: 600 }}>
+                            <div style={{ color: "#171717", lineHeight: 1.6, fontWeight: 600 }}>
                               [{left.ordering.join(", ")}]
                             </div>
-                            <div style={{ marginTop: 8, color: "#bbbbbb" }}>
+                            <div style={{ marginTop: 8, color: "#666" }}>
                               Знайдено в поколінні {left.generationFound}
                             </div>
                             <div style={{ marginTop: 8, fontWeight: 700 }}>Мінімум Суми (K1): {left.k1Value}</div>
-                            <div style={{ marginTop: 4, color: "#bbbbbb" }}>
+                            <div style={{ marginTop: 4, color: "#666" }}>
                               (При цьому Максимум K2 = {left.k2Value})
                             </div>
                           </>
                         ) : (
-                          <span style={{ color: "#bbbbbb" }}>-</span>
+                          <span style={{ color: "#999" }}>-</span>
                         )}
                       </td>
                       <td
@@ -187,19 +181,19 @@ export default function IndependentSolutionsTable() {
                       >
                         {right ? (
                           <>
-                            <div style={{ color: "#ffffff", lineHeight: 1.6, fontWeight: 600 }}>
+                            <div style={{ color: "#171717", lineHeight: 1.6, fontWeight: 600 }}>
                               [{right.ordering.join(", ")}]
                             </div>
-                            <div style={{ marginTop: 8, color: "#bbbbbb" }}>
+                            <div style={{ marginTop: 8, color: "#666" }}>
                               Знайдено в поколінні {right.generationFound}
                             </div>
                             <div style={{ marginTop: 8, fontWeight: 700 }}>
                               Мінімум Максимуму (K2): {right.k2Value}
                             </div>
-                            <div style={{ marginTop: 4, color: "#bbbbbb" }}>(При цьому Сума K1 = {right.k1Value})</div>
+                            <div style={{ marginTop: 4, color: "#666" }}>(При цьому Сума K1 = {right.k1Value})</div>
                           </>
                         ) : (
-                          <span style={{ color: "#bbbbbb" }}>-</span>
+                          <span style={{ color: "#999" }}>-</span>
                         )}
                       </td>
                     </tr>
