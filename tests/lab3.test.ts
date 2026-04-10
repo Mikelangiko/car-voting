@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 
 import { buildRankMatrix, calculateLab3, distanceToExpert, generatePermutations, type Lab3Input } from "../lib/lab3/index.ts";
+import { runLab3GeneticAlgorithm } from "../lib/lab3/genetic.ts";
+import { generateFullExpertRankings } from "../lib/lab3/generateInput.ts";
 
 function run() {
   const rankMatrix = buildRankMatrix(
@@ -71,6 +73,30 @@ function run() {
       topLimit: 3,
     });
   }, /не може вибирати один і той самий об'єкт/);
+
+  const objects = Array.from({ length: 10 }, (_, index) => ({
+    id: index + 1,
+    name: `Object ${index + 1}`,
+  }));
+
+  const expertRankings = generateFullExpertRankings(12345, 10, objects);
+  assert.equal(expertRankings.length, 10);
+  assert.ok(
+    expertRankings.every((ranking) => ranking.orderingIds.length === 10 && new Set(ranking.orderingIds).size === 10)
+  );
+
+  const geneticA = runLab3GeneticAlgorithm(objects, expertRankings, 12345);
+  const geneticB = runLab3GeneticAlgorithm(objects, expertRankings, 12345);
+
+  assert.equal(geneticA.meta.rankingsCount, 10);
+  assert.ok(geneticA.bestBySum.length > 0);
+  assert.ok(geneticA.bestByMax.length > 0);
+  assert.ok(Number.isFinite(geneticA.minSum));
+  assert.ok(Number.isFinite(geneticA.minMax));
+  assert.deepEqual(geneticA.bestBySum, geneticB.bestBySum);
+  assert.deepEqual(geneticA.bestByMax, geneticB.bestByMax);
+  assert.ok(geneticA.bestBySum.every((row) => row.orderingIds.length === 10 && new Set(row.orderingIds).size === 10));
+  assert.ok(geneticA.bestByMax.every((row) => row.orderingIds.length === 10 && new Set(row.orderingIds).size === 10));
 
   console.log("lab3 tests passed");
 }

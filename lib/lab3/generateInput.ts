@@ -1,6 +1,7 @@
 import lab3InputJson from "../../data/lab3/input.json" with { type: "json" };
 
 import type { Lab3ExpertInput, Lab3Input, Lab3Object } from "./index";
+import type { Lab3FullExpertRanking } from "./genetic";
 
 function createRng(seed: number) {
   let state = seed >>> 0;
@@ -67,4 +68,40 @@ export function generateLab3Input(seed = 20260410, expertsCount = 16): Lab3Input
 
 export function generateLab3InputJson(seed = 20260410, expertsCount = 16) {
   return JSON.stringify(generateLab3Input(seed, expertsCount), null, 2);
+}
+
+export function generateFullExpertRankings(
+  seed = 20260410,
+  count = 10,
+  objects?: Lab3Object[]
+): Lab3FullExpertRanking[] {
+  const sourceObjects =
+    objects ??
+    ((lab3InputJson as Lab3Input).objects.map((object) => ({
+      id: object.id,
+      name: object.name,
+      year: object.year ?? null,
+    })) as Lab3Object[]);
+
+  const rng = createRng(seed ^ 0x5a5a5a5a);
+  const ids = sourceObjects.map((object) => object.id);
+  const signatures = new Set<string>();
+  const rankings: Lab3FullExpertRanking[] = [];
+
+  while (rankings.length < count) {
+    const orderingIds = shuffle(ids, rng);
+    const signature = orderingIds.join("-");
+
+    if (signatures.has(signature)) {
+      continue;
+    }
+
+    signatures.add(signature);
+    rankings.push({
+      expertId: rankings.length + 1,
+      orderingIds,
+    });
+  }
+
+  return rankings;
 }

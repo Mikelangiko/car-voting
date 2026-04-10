@@ -1,9 +1,11 @@
 import Link from "next/link";
 
 import GenerateLab3Button from "@/app/lab3/GenerateLab3Button";
+import GeneticResultsPanel from "@/app/lab3/GeneticResultsPanel";
 import lab3InputJson from "@/data/lab3/input.json";
 import { calculateLab3, type Lab3PermutationRow, type Lab3Input } from "@/lib/lab3";
-import { generateLab3Input } from "@/lib/lab3/generateInput";
+import { runLab3GeneticAlgorithm } from "@/lib/lab3/genetic";
+import { generateFullExpertRankings, generateLab3Input } from "@/lib/lab3/generateInput";
 
 const pageStyle: React.CSSProperties = {
   maxWidth: 1280,
@@ -268,9 +270,13 @@ export default async function Lab3Page({
     expectedObjectsCount: 10,
     topLimit: 25,
   });
-  const dataLabel = hasGeneratedSeed ? `Згенеровані дані · seed ${parsedSeed}` : "Базові дані";
+  const effectiveSeed = hasGeneratedSeed ? parsedSeed : 20260410;
+  const geneticExpertRankings = generateFullExpertRankings(effectiveSeed, 10, input.objects);
+  const geneticResult = runLab3GeneticAlgorithm(input.objects, geneticExpertRankings, effectiveSeed);
+  const dataLabel = hasGeneratedSeed ? `Згенеровані дані · seed ${parsedSeed}` : `Базові дані · seed ${effectiveSeed}`;
   const visibleBestBySum = result.bestBySum.slice(0, MAX_VISIBLE_OPTIMAL_ROWS);
   const visibleBestByMax = result.bestByMax.slice(0, MAX_VISIBLE_OPTIMAL_ROWS);
+  const objectLabels = Object.fromEntries(input.objects.map((object) => [object.id, object.name]));
 
   return (
     <main style={pageStyle}>
@@ -370,6 +376,11 @@ export default async function Lab3Page({
           }
           rows={visibleBestByMax}
           labels={result.surveyMatrix.labels}
+        />
+
+        <GeneticResultsPanel
+          result={geneticResult}
+          objectLabels={objectLabels}
         />
       </section>
     </main>
