@@ -81,7 +81,7 @@ export default function IndependentSolutionsTable() {
       </section>
 
       <section style={{ padding: "8px 0", marginTop: 18 }}>
-        <h3 style={{ marginTop: 0 }}>Оптимальні незалежні розв&apos;язки за K1 та K2</h3>
+        <h3 style={{ marginTop: 0 }}>Оптимальні незалежні розв&apos;язки</h3>
 
         <div
           style={{
@@ -105,8 +105,7 @@ export default function IndependentSolutionsTable() {
                     width: "47%",
                   }}
                 >
-                  Колонка 1: Оптимальні за K1
-                  <div style={{ fontWeight: 400, fontSize: 13, marginTop: 4 }}>(Мінімізована сума відстаней)</div>
+                  Мінімізована сума відстаней
                 </th>
                 <th
                   style={{
@@ -116,8 +115,7 @@ export default function IndependentSolutionsTable() {
                     width: "47%",
                   }}
                 >
-                  Колонка 2: Оптимальні за K2
-                  <div style={{ fontWeight: 400, fontSize: 13, marginTop: 4 }}>(Мінімізований максимум)</div>
+                  Мінімізований максимум
                 </th>
               </tr>
             </thead>
@@ -157,13 +155,8 @@ export default function IndependentSolutionsTable() {
                             <div style={{ color: "#171717", lineHeight: 1.6, fontWeight: 600 }}>
                               [{left.ordering.join(", ")}]
                             </div>
-                            <div style={{ marginTop: 8, color: "#666" }}>
-                              Знайдено в поколінні {left.generationFound}
-                            </div>
-                            <div style={{ marginTop: 8, fontWeight: 700 }}>Мінімум Суми (K1): {left.k1Value}</div>
-                            <div style={{ marginTop: 4, color: "#666" }}>
-                              (При цьому Максимум K2 = {left.k2Value})
-                            </div>
+                            <div style={{ marginTop: 8, fontWeight: 700 }}>Мінімум Суми: {left.k1Value}</div>
+                            <div style={{ marginTop: 4, color: "#666" }}>(При цьому Максимум = {left.k2Value})</div>
                           </>
                         ) : (
                           <span style={{ color: "#999" }}>-</span>
@@ -184,13 +177,8 @@ export default function IndependentSolutionsTable() {
                             <div style={{ color: "#171717", lineHeight: 1.6, fontWeight: 600 }}>
                               [{right.ordering.join(", ")}]
                             </div>
-                            <div style={{ marginTop: 8, color: "#666" }}>
-                              Знайдено в поколінні {right.generationFound}
-                            </div>
-                            <div style={{ marginTop: 8, fontWeight: 700 }}>
-                              Мінімум Максимуму (K2): {right.k2Value}
-                            </div>
-                            <div style={{ marginTop: 4, color: "#666" }}>(При цьому Сума K1 = {right.k1Value})</div>
+                            <div style={{ marginTop: 8, fontWeight: 700 }}>Мінімум Максимуму: {right.k2Value}</div>
+                            <div style={{ marginTop: 4, color: "#666" }}>(При цьому Сума = {right.k1Value})</div>
                           </>
                         ) : (
                           <span style={{ color: "#999" }}>-</span>

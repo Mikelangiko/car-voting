@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const buttonStyle: React.CSSProperties = {
   padding: "10px 14px",
@@ -14,12 +14,15 @@ const buttonStyle: React.CSSProperties = {
 export default function GenerateLab3Button() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   return (
     <button
       type="button"
       onClick={() => {
-        router.push(`${pathname}?seed=${Date.now()}`);
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("seed", String(Date.now()));
+        router.push(`${pathname}?${params.toString()}`);
       }}
       style={buttonStyle}
     >

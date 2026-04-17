@@ -29,30 +29,31 @@ export default function HomePage() {
       >
         <Link href="/lab1" style={cardStyle}>
           <h2 style={{ marginTop: 0, marginBottom: 10 }}>Лабораторна 1</h2>
-          <p style={{ margin: 0, color: "#666" }}>
-            Голосування за об’єкти та формування рейтингу.
-          </p>
+          <p style={{ margin: 0, color: "#666" }}>Голосування за об’єкти та формування рейтингу.</p>
         </Link>
 
         <Link href="/lab2" style={cardStyle}>
           <h2 style={{ marginTop: 0, marginBottom: 10 }}>Лабораторна 2</h2>
-          <p style={{ margin: 0, color: "#666" }}>
-            Голосування за евристики для відсіювання об’єктів.
-          </p>
+          <p style={{ margin: 0, color: "#666" }}>Голосування за евристики для відсіювання об’єктів.</p>
         </Link>
 
         <Link href="/lab3" style={cardStyle}>
           <h2 style={{ marginTop: 0, marginBottom: 10 }}>Лабораторна 3</h2>
           <p style={{ margin: 0, color: "#666" }}>
-            Матриці опитування, ранги об&apos;єктів і пошук оптимальних перестановок за sum та max.
+            Матриці опитування, ранги об&apos;єктів і повний перебір перестановок за sum та max.
+          </p>
+        </Link>
+
+        <Link href="/lab4" style={cardStyle}>
+          <h2 style={{ marginTop: 0, marginBottom: 10 }}>Лабораторна 4</h2>
+          <p style={{ margin: 0, color: "#666" }}>
+            Розподілений прямий перебір перестановок з верифікацією збігу з результатами Лаби 3.
           </p>
         </Link>
 
         <Link href="/results" style={cardStyle}>
           <h2 style={{ marginTop: 0, marginBottom: 10 }}>Спільні результати</h2>
-          <p style={{ margin: 0, color: "#666" }}>
-            Протоколи, рейтинги та результати для 1 і 2 лабораторної.
-          </p>
+          <p style={{ margin: 0, color: "#666" }}>Протоколи, рейтинги та результати для попередніх лабораторних.</p>
         </Link>
       </section>
     </main>

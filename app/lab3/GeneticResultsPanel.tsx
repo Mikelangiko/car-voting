@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import type { Lab3FullExpertRanking, Lab3GeneticResult, Lab3GeneticSolution } from "@/lib/lab3/genetic";
+import type { Lab3GeneticExpertChoice, Lab3GeneticResult, Lab3GeneticSolution } from "@/lib/lab3/genetic";
 
 const tabButtonStyle: React.CSSProperties = {
   padding: "10px 14px",
@@ -17,7 +17,7 @@ function ExpertRankingsTable({
   rankings,
   objectLabels,
 }: {
-  rankings: Lab3FullExpertRanking[];
+  rankings: Lab3GeneticExpertChoice[];
   objectLabels: Record<number, string>;
 }) {
   return (
@@ -29,7 +29,7 @@ function ExpertRankingsTable({
               Експерт
             </th>
             <th style={{ textAlign: "left", padding: "12px 10px", borderBottom: "1px solid #e7e7e7", background: "#f7f8fc" }}>
-              Повне ранжування
+              Вибір експерта (top-3)
             </th>
           </tr>
         </thead>
@@ -52,7 +52,7 @@ function ExpertRankingsTable({
                   borderBottom: rowIndex === rankings.length - 1 ? "none" : "1px solid #efefef",
                 }}
               >
-                {ranking.orderingIds.map((id, index) => (
+                {ranking.choiceIds.map((id, index) => (
                   <span
                     key={`${ranking.expertId}-${id}`}
                     style={{
@@ -81,14 +81,16 @@ function ExpertRankingsTable({
 }
 
 function SolutionsList({
-  title,
-  minValue,
-  valueLabel,
+  primaryLabel,
+  primaryValue,
+  secondaryLabel,
+  secondaryValue,
   solutions,
 }: {
-  title: string;
-  minValue: number;
-  valueLabel: string;
+  primaryLabel: string;
+  primaryValue: number;
+  secondaryLabel: string;
+  secondaryValue: number;
   solutions: Lab3GeneticSolution[];
 }) {
   return (
@@ -103,14 +105,13 @@ function SolutionsList({
           fontWeight: 700,
         }}
       >
-        {title}: {valueLabel}
-        {minValue}
+        {primaryLabel}: {primaryValue}, {secondaryLabel}: {secondaryValue}
       </div>
 
       <div style={{ marginTop: 16, display: "grid", gap: 12 }}>
         {solutions.map((solution, index) => (
           <article
-            key={`${title}-${solution.orderingIds.join("-")}`}
+            key={`${primaryLabel}-${solution.orderingIds.join("-")}`}
             style={{
               border: "1px solid #e5e7eb",
               borderRadius: 16,
@@ -160,8 +161,8 @@ export default function GeneticResultsPanel({
       <h3 style={{ marginTop: 0, marginBottom: 8 }}>Генетичний алгоритм</h3>
 
       <div style={{ color: "#666", marginBottom: 14 }}>
-        seed: <b>{result.meta.seed}</b>, повних експертних ранжувань: <b>{result.meta.rankingsCount}</b>,
-        population: <b>{result.meta.populationSize}</b>, generations: <b>{result.meta.generations}</b>
+        seed: <b>{result.meta.seed}</b>, експертних виборів: <b>{result.meta.rankingsCount}</b>, population:{" "}
+        <b>{result.meta.populationSize}</b>, generations: <b>{result.meta.generations}</b>
       </div>
 
       <ExpertRankingsTable rankings={result.expertRankings} objectLabels={objectLabels} />
@@ -193,16 +194,18 @@ export default function GeneticResultsPanel({
 
       {tab === "sum" ? (
         <SolutionsList
-          title="Глобальний консенсус"
-          minValue={result.minSum}
-          valueLabel="Знайдений мінімум sum: "
+          primaryLabel="Знайдений мінімум sum"
+          primaryValue={result.minSum}
+          secondaryLabel="Відповідний max"
+          secondaryValue={result.bestBySum[0]?.max ?? Number.POSITIVE_INFINITY}
           solutions={result.bestBySum}
         />
       ) : (
         <SolutionsList
-          title="Мінімаксне ранжування"
-          minValue={result.minMax}
-          valueLabel="Знайдений мінімум max: "
+          primaryLabel="Знайдений мінімум max"
+          primaryValue={result.minMax}
+          secondaryLabel="Відповідний sum"
+          secondaryValue={result.bestByMax[0]?.sum ?? Number.POSITIVE_INFINITY}
           solutions={result.bestByMax}
         />
       )}

@@ -1,8 +1,8 @@
-import type { Lab3Object } from "./index";
+import type { Lab3NormalizedExpert, Lab3Object } from "./index";
 
-export type Lab3FullExpertRanking = {
+export type Lab3GeneticExpertChoice = {
   expertId: number;
-  orderingIds: number[];
+  choiceIds: number[];
 };
 
 export type Lab3GeneticSolution = {
@@ -14,7 +14,7 @@ export type Lab3GeneticSolution = {
 };
 
 export type Lab3GeneticResult = {
-  expertRankings: Lab3FullExpertRanking[];
+  expertRankings: Lab3GeneticExpertChoice[];
   minSum: number;
   minMax: number;
   bestBySum: Lab3GeneticSolution[];
@@ -90,23 +90,22 @@ function compareByMax(left: GeneticCandidate, right: GeneticCandidate) {
   return left.max - right.max || left.sum - right.sum || compareOrdering(left.orderingIds, right.orderingIds);
 }
 
-function evaluateFullRankingDistance(orderingIds: number[], expertRanking: number[]) {
+function evaluateTop3Distance(orderingIds: number[], expert: Lab3NormalizedExpert) {
   const positions = new Array<number>(orderingIds.length + 1).fill(-1);
 
   for (let index = 0; index < orderingIds.length; index += 1) {
     positions[orderingIds[index]] = index;
   }
 
-  let distance = 0;
-  for (let index = 0; index < expertRanking.length; index += 1) {
-    distance += Math.abs(index - positions[expertRanking[index]]);
-  }
-
-  return distance;
+  return (
+    Math.abs(positions[expert.first] - 0) +
+    Math.abs(positions[expert.second] - 1) +
+    Math.abs(positions[expert.third] - 2)
+  );
 }
 
-function evaluateCandidate(orderingIds: number[], expertRankings: Lab3FullExpertRanking[], criterion: Criterion) {
-  const distances = expertRankings.map((expert) => evaluateFullRankingDistance(orderingIds, expert.orderingIds));
+function evaluateCandidate(orderingIds: number[], experts: Lab3NormalizedExpert[], criterion: Criterion) {
+  const distances = experts.map((expert) => evaluateTop3Distance(orderingIds, expert));
   const sum = distances.reduce((total, value) => total + value, 0);
   const max = Math.max(...distances);
   const objective = criterion === "sum" ? sum : max;
@@ -188,14 +187,20 @@ function pickParent(population: GeneticCandidate[], rng: () => number) {
   return best;
 }
 
+function buildSeedOrdering(ids: number[], expert: Lab3NormalizedExpert) {
+  const top = [expert.first, expert.second, expert.third];
+  const used = new Set(top);
+  return top.concat(ids.filter((id) => !used.has(id)));
+}
+
 function createInitialPopulation(
   objects: Lab3Object[],
-  expertRankings: Lab3FullExpertRanking[],
+  experts: Lab3NormalizedExpert[],
   rng: () => number,
   criterion: Criterion
 ) {
   const ids = objects.map((object) => object.id);
-  const seeds: number[][] = [[...ids], [...ids].reverse(), ...expertRankings.map((expert) => [...expert.orderingIds])];
+  const seeds: number[][] = [[...ids], [...ids].reverse(), ...experts.map((expert) => buildSeedOrdering(ids, expert))];
 
   while (seeds.length < POPULATION_SIZE) {
     seeds.push(shuffle(ids, rng));
@@ -203,15 +208,11 @@ function createInitialPopulation(
 
   return seeds
     .slice(0, POPULATION_SIZE)
-    .map((orderingIds) => evaluateCandidate(orderingIds, expertRankings, criterion))
+    .map((orderingIds) => evaluateCandidate(orderingIds, experts, criterion))
     .sort((left, right) => right.fitness - left.fitness);
 }
 
-function collectBestSolutions(
-  candidates: GeneticCandidate[],
-  objects: Lab3Object[],
-  criterion: Criterion
-): Lab3GeneticSolution[] {
+function collectBestSolutions(candidates: GeneticCandidate[], objects: Lab3Object[], criterion: Criterion): Lab3GeneticSolution[] {
   const objectMap = new Map(objects.map((object) => [object.id, object.name]));
   const sorted = [...candidates].sort(criterion === "sum" ? compareBySum : compareByMax);
   const bestValue = criterion === "sum" ? sorted[0]?.sum ?? Number.POSITIVE_INFINITY : sorted[0]?.max ?? Number.POSITIVE_INFINITY;
@@ -228,14 +229,9 @@ function collectBestSolutions(
     }));
 }
 
-function runForCriterion(
-  objects: Lab3Object[],
-  expertRankings: Lab3FullExpertRanking[],
-  criterion: Criterion,
-  seed: number
-) {
+function runForCriterion(objects: Lab3Object[], experts: Lab3NormalizedExpert[], criterion: Criterion, seed: number) {
   const rng = createRng(seed ^ (criterion === "sum" ? 0x13579bdf : 0x2468ace0));
-  let population = createInitialPopulation(objects, expertRankings, rng, criterion);
+  let population = createInitialPopulation(objects, experts, rng, criterion);
   const seen = new Map<string, GeneticCandidate>();
 
   for (const candidate of population) {
@@ -252,7 +248,7 @@ function runForCriterion(
       const parentA = pickParent(population, rng);
       const parentB = pickParent(population, rng);
       const childIds = mutate(crossover(parentA.orderingIds, parentB.orderingIds, rng), rng);
-      const child = evaluateCandidate(childIds, expertRankings, criterion);
+      const child = evaluateCandidate(childIds, experts, criterion);
       nextPopulation.push(child);
       seen.set(buildSignature(child.orderingIds), child);
     }
@@ -265,21 +261,24 @@ function runForCriterion(
 
 export function runLab3GeneticAlgorithm(
   objects: Lab3Object[],
-  expertRankings: Lab3FullExpertRanking[],
+  experts: Lab3NormalizedExpert[],
   seed: number
 ): Lab3GeneticResult {
-  const bestBySum = runForCriterion(objects, expertRankings, "sum", seed);
-  const bestByMax = runForCriterion(objects, expertRankings, "max", seed);
+  const bestBySum = runForCriterion(objects, experts, "sum", seed);
+  const bestByMax = runForCriterion(objects, experts, "max", seed);
 
   return {
-    expertRankings,
+    expertRankings: experts.map((expert) => ({
+      expertId: expert.expertId,
+      choiceIds: [expert.first, expert.second, expert.third],
+    })),
     minSum: bestBySum[0]?.sum ?? Number.POSITIVE_INFINITY,
     minMax: bestByMax[0]?.max ?? Number.POSITIVE_INFINITY,
     bestBySum,
     bestByMax,
     meta: {
       seed,
-      rankingsCount: expertRankings.length,
+      rankingsCount: experts.length,
       populationSize: POPULATION_SIZE,
       generations: GENERATIONS,
     },

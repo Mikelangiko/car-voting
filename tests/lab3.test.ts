@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 
 import { buildRankMatrix, calculateLab3, distanceToExpert, generatePermutations, type Lab3Input } from "../lib/lab3/index.ts";
 import { runLab3GeneticAlgorithm } from "../lib/lab3/genetic.ts";
-import { generateFullExpertRankings } from "../lib/lab3/generateInput.ts";
+import { generateFullExpertRankings, generateLab3Input } from "../lib/lab3/generateInput.ts";
 
 function run() {
   const rankMatrix = buildRankMatrix(
@@ -84,9 +84,15 @@ function run() {
   assert.ok(
     expertRankings.every((ranking) => ranking.orderingIds.length === 10 && new Set(ranking.orderingIds).size === 10)
   );
+  const top3ExpertRankings = expertRankings.map((ranking) => ({
+    expertId: ranking.expertId,
+    first: ranking.orderingIds[0],
+    second: ranking.orderingIds[1],
+    third: ranking.orderingIds[2],
+  }));
 
-  const geneticA = runLab3GeneticAlgorithm(objects, expertRankings, 12345);
-  const geneticB = runLab3GeneticAlgorithm(objects, expertRankings, 12345);
+  const geneticA = runLab3GeneticAlgorithm(objects, top3ExpertRankings, 12345);
+  const geneticB = runLab3GeneticAlgorithm(objects, top3ExpertRankings, 12345);
 
   assert.equal(geneticA.meta.rankingsCount, 10);
   assert.ok(geneticA.bestBySum.length > 0);
@@ -97,6 +103,35 @@ function run() {
   assert.deepEqual(geneticA.bestByMax, geneticB.bestByMax);
   assert.ok(geneticA.bestBySum.every((row) => row.orderingIds.length === 10 && new Set(row.orderingIds).size === 10));
   assert.ok(geneticA.bestByMax.every((row) => row.orderingIds.length === 10 && new Set(row.orderingIds).size === 10));
+
+  const variantInput = generateLab3Input(20260410, 8, 11);
+  const geneticVariant = runLab3GeneticAlgorithm(
+    variantInput.objects,
+    variantInput.experts.map((expert) => ({
+      expertId: expert.expertId,
+      first: expert.first ?? 0,
+      second: expert.second ?? 0,
+      third: expert.third ?? 0,
+    })),
+    20260410
+  );
+
+  assert.equal(variantInput.objects.length, 11);
+  assert.equal(variantInput.experts.length, 8);
+  assert.ok(variantInput.objects.every((object) => Number.isInteger(object.id)));
+  assert.ok(
+    variantInput.experts.every(
+      (expert) =>
+        expert.first !== null &&
+        expert.second !== null &&
+        expert.third !== null &&
+        new Set([expert.first, expert.second, expert.third]).size === 3
+    )
+  );
+  assert.ok(geneticVariant.bestBySum.length > 0);
+  assert.ok(geneticVariant.bestByMax.length > 0);
+  assert.ok(geneticVariant.bestBySum.every((row) => row.orderingIds.length === 11 && new Set(row.orderingIds).size === 11));
+  assert.ok(geneticVariant.bestByMax.every((row) => row.orderingIds.length === 11 && new Set(row.orderingIds).size === 11));
 
   console.log("lab3 tests passed");
 }

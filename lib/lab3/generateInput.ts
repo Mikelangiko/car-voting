@@ -1,7 +1,34 @@
-import lab3InputJson from "../../data/lab3/input.json" with { type: "json" };
+import lab3VariantInputJson from "../../data/lab3/variant-8x11.json" with { type: "json" };
 
 import type { Lab3ExpertInput, Lab3Input, Lab3Object } from "./index";
-import type { Lab3FullExpertRanking } from "./genetic";
+
+type Lab3FullExpertRanking = {
+  expertId: number;
+  orderingIds: number[];
+};
+
+function buildObjects(objectsCount: number): Lab3Object[] {
+  const sourceObjects = (lab3VariantInputJson as Lab3Input).objects.map((object) => ({
+    id: object.id,
+    name: object.name,
+    year: object.year ?? null,
+  }));
+
+  if (objectsCount <= sourceObjects.length) {
+    return sourceObjects.slice(0, objectsCount);
+  }
+
+  const generated: Lab3Object[] = [...sourceObjects];
+  for (let index = sourceObjects.length; index < objectsCount; index += 1) {
+    generated.push({
+      id: index + 1,
+      name: `Об'єкт ${index + 1}`,
+      year: null,
+    });
+  }
+
+  return generated;
+}
 
 function createRng(seed: number) {
   let state = seed >>> 0;
@@ -52,13 +79,8 @@ function buildExpertVotes(objects: Lab3Object[], expertsCount: number, seed: num
   return experts;
 }
 
-export function generateLab3Input(seed = 20260410, expertsCount = 16): Lab3Input {
-  const source = lab3InputJson as Lab3Input;
-  const objects = source.objects.map((object) => ({
-    id: object.id,
-    name: object.name,
-    year: object.year ?? null,
-  }));
+export function generateLab3Input(seed = 20260410, expertsCount = 16, objectsCount = 10): Lab3Input {
+  const objects = buildObjects(objectsCount);
 
   return {
     objects,
@@ -66,8 +88,8 @@ export function generateLab3Input(seed = 20260410, expertsCount = 16): Lab3Input
   };
 }
 
-export function generateLab3InputJson(seed = 20260410, expertsCount = 16) {
-  return JSON.stringify(generateLab3Input(seed, expertsCount), null, 2);
+export function generateLab3InputJson(seed = 20260410, expertsCount = 16, objectsCount = 10) {
+  return JSON.stringify(generateLab3Input(seed, expertsCount, objectsCount), null, 2);
 }
 
 export function generateFullExpertRankings(
@@ -77,7 +99,7 @@ export function generateFullExpertRankings(
 ): Lab3FullExpertRanking[] {
   const sourceObjects =
     objects ??
-    ((lab3InputJson as Lab3Input).objects.map((object) => ({
+    ((lab3VariantInputJson as Lab3Input).objects.map((object) => ({
       id: object.id,
       name: object.name,
       year: object.year ?? null,

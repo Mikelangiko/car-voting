@@ -160,6 +160,10 @@ function insertSorted(
   limit: number,
   comparator: (left: Lab3PermutationRow, right: Lab3PermutationRow) => number
 ) {
+  if (rows.some((item) => item.orderingIds.length === row.orderingIds.length && compareOrdering(item.orderingIds, row.orderingIds) === 0)) {
+    return;
+  }
+
   let insertIndex = rows.findIndex((item) => comparator(row, item) < 0);
 
   if (insertIndex === -1) {
@@ -420,7 +424,6 @@ export function calculateLab3(
 
   const surveyMatrix = buildSurveyMatrix(normalized.experts);
   const rankMatrix = buildRankMatrix(normalized.objects, normalized.experts);
-
   let permutationsEvaluated = 0;
   let minSum = Number.POSITIVE_INFINITY;
   let minMax = Number.POSITIVE_INFINITY;

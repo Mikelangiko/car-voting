@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:lab3": "node --experimental-strip-types tests/lab3.test.ts"
+    "test:lab3": "node --experimental-strip-types tests/lab3.test.ts",
+    "test:lab4": "node --experimental-strip-types tests/lab4.test.ts",
+    "test:labs": "npm run test:lab3 && npm run test:lab4"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",

@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 
-import IndependentSolutionsTable from "@/app/components/IndependentSolutionsTable";
+const IndependentSolutionsTable = dynamic(() => import("@/app/components/IndependentSolutionsTable"), {
+  ssr: false,
+});
 
 type CarRow = {
   id: number;

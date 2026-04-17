@@ -2,10 +2,20 @@ import Link from "next/link";
 
 import GenerateLab3Button from "@/app/lab3/GenerateLab3Button";
 import GeneticResultsPanel from "@/app/lab3/GeneticResultsPanel";
-import lab3InputJson from "@/data/lab3/input.json";
-import { calculateLab3, type Lab3PermutationRow, type Lab3Input } from "@/lib/lab3";
+import defaultLab3InputJson from "@/data/lab3/input.json";
+import variantLab3InputJson from "@/data/lab3/variant-8x11.json";
+import {
+  LAB3_DEFAULT_EXPERTS_COUNT,
+  LAB3_OBJECTS_COUNT,
+  buildRankMatrix,
+  buildSurveyMatrix,
+  calculateLab3,
+  normalizeLab3Input,
+  type Lab3Input,
+  type Lab3PermutationRow,
+} from "@/lib/lab3";
 import { runLab3GeneticAlgorithm } from "@/lib/lab3/genetic";
-import { generateFullExpertRankings, generateLab3Input } from "@/lib/lab3/generateInput";
+import { generateLab3Input } from "@/lib/lab3/generateInput";
 
 const pageStyle: React.CSSProperties = {
   maxWidth: 1280,
@@ -54,6 +64,11 @@ const tdStyle: React.CSSProperties = {
 };
 
 const MAX_VISIBLE_OPTIMAL_ROWS = 40;
+const LAB3_DEFAULT_MODE = "base";
+const LAB3_VARIANT_EXPERTS_COUNT = 8;
+const LAB3_VARIANT_OBJECTS_COUNT = 11;
+
+type Lab3Mode = "base" | "variant811" | "large";
 
 function SurveyMatrixTable({
   labels,
@@ -259,24 +274,56 @@ function PermutationsTable({
 export default async function Lab3Page({
   searchParams,
 }: {
-  searchParams?: Promise<{ seed?: string }>;
+  searchParams?: Promise<{ seed?: string; mode?: string }>;
 }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const seedParam = resolvedSearchParams?.seed;
+  const modeParam = resolvedSearchParams?.mode;
   const parsedSeed = seedParam ? Number(seedParam) : Number.NaN;
   const hasGeneratedSeed = Number.isFinite(parsedSeed);
-  const input = hasGeneratedSeed ? generateLab3Input(parsedSeed, 16) : (lab3InputJson as Lab3Input);
-  const result = calculateLab3(input, {
-    expectedObjectsCount: 10,
-    topLimit: 25,
+  const mode: Lab3Mode =
+    modeParam === "large" ? "large" : modeParam === "variant811" ? "variant811" : LAB3_DEFAULT_MODE;
+  const isLargeMode = mode === "large";
+  const isVariantMode = mode === "variant811";
+  const expertsCount = isLargeMode ? 100 : isVariantMode ? LAB3_VARIANT_EXPERTS_COUNT : LAB3_DEFAULT_EXPERTS_COUNT;
+  const objectsCount = isLargeMode ? 50 : isVariantMode ? LAB3_VARIANT_OBJECTS_COUNT : LAB3_OBJECTS_COUNT;
+
+  const input =
+    hasGeneratedSeed || isLargeMode
+      ? generateLab3Input(hasGeneratedSeed ? parsedSeed : 20260410, expertsCount, objectsCount)
+      : isVariantMode
+      ? (variantLab3InputJson as Lab3Input)
+      : (defaultLab3InputJson as Lab3Input);
+
+  const normalizedInput = normalizeLab3Input(input, {
+    expectedObjectsCount: objectsCount,
   });
+
+  const result = isLargeMode
+    ? null
+    : calculateLab3(input, {
+        expectedObjectsCount: objectsCount,
+        topLimit: 25,
+      });
+
   const effectiveSeed = hasGeneratedSeed ? parsedSeed : 20260410;
-  const geneticExpertRankings = generateFullExpertRankings(effectiveSeed, 10, input.objects);
-  const geneticResult = runLab3GeneticAlgorithm(input.objects, geneticExpertRankings, effectiveSeed);
-  const dataLabel = hasGeneratedSeed ? `Згенеровані дані · seed ${parsedSeed}` : `Базові дані · seed ${effectiveSeed}`;
-  const visibleBestBySum = result.bestBySum.slice(0, MAX_VISIBLE_OPTIMAL_ROWS);
-  const visibleBestByMax = result.bestByMax.slice(0, MAX_VISIBLE_OPTIMAL_ROWS);
+  const geneticResult = runLab3GeneticAlgorithm(input.objects, normalizedInput.experts, effectiveSeed);
+
+  const dataLabel = isLargeMode
+    ? `Великий набір · seed ${effectiveSeed}`
+    : isVariantMode && !hasGeneratedSeed
+    ? `Варіант 8 / 11 · seed ${effectiveSeed}`
+    : hasGeneratedSeed
+    ? `Згенеровані дані · seed ${parsedSeed}`
+    : `Базові дані · seed ${effectiveSeed}`;
+
+  const visibleBestBySum = result ? result.bestBySum.slice(0, MAX_VISIBLE_OPTIMAL_ROWS) : [];
+  const visibleBestByMax = result ? result.bestByMax.slice(0, MAX_VISIBLE_OPTIMAL_ROWS) : [];
+  const bestSumCompanionMax = result?.bestBySum[0]?.max;
+  const bestMaxCompanionSum = result?.bestByMax[0]?.sum;
   const objectLabels = Object.fromEntries(input.objects.map((object) => [object.id, object.name]));
+  const surveyMatrix = result ? result.surveyMatrix : buildSurveyMatrix(normalizedInput.experts);
+  const rankMatrix = result ? result.rankMatrix : buildRankMatrix(normalizedInput.objects, normalizedInput.experts);
 
   return (
     <main style={pageStyle}>
@@ -290,7 +337,7 @@ export default async function Lab3Page({
         }}
       >
         <div style={{ maxWidth: 880 }}>
-          <h1 style={{ margin: 0 }}>Лабораторна 3 — рангові матриці та повний перебір 10!</h1>
+          <h1 style={{ margin: 0 }}>Лабораторна 3 — рангові матриці та прямий перебір</h1>
 
           <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Link href="/" style={buttonStyle}>
@@ -300,6 +347,39 @@ export default async function Lab3Page({
               До спільних результатів
             </Link>
             <GenerateLab3Button />
+            <Link
+              href="/lab3"
+              style={{
+                ...buttonStyle,
+                borderColor: mode === "base" ? "#17324d" : "#cfcfcf",
+                background: mode === "base" ? "#17324d" : "#fff",
+                color: mode === "base" ? "#fff" : "inherit",
+              }}
+            >
+              Базовий режим 16 / 10
+            </Link>
+            <Link
+              href="/lab3?mode=variant811"
+              style={{
+                ...buttonStyle,
+                borderColor: mode === "variant811" ? "#17324d" : "#cfcfcf",
+                background: mode === "variant811" ? "#17324d" : "#fff",
+                color: mode === "variant811" ? "#fff" : "inherit",
+              }}
+            >
+              Варіант 8 / 11
+            </Link>
+            <Link
+              href="/lab3?mode=large"
+              style={{
+                ...buttonStyle,
+                borderColor: mode === "large" ? "#17324d" : "#cfcfcf",
+                background: mode === "large" ? "#17324d" : "#fff",
+                color: mode === "large" ? "#fff" : "inherit",
+              }}
+            >
+              100 експертів / 50 об&apos;єктів
+            </Link>
           </div>
         </div>
 
@@ -315,73 +395,101 @@ export default async function Lab3Page({
           <div style={{ fontSize: 13, color: "#52606d" }}>Поточна конфігурація</div>
           <div style={{ marginTop: 10, color: "#52606d" }}>{dataLabel}</div>
           <div style={{ marginTop: 10, color: "#52606d" }}>
-            {result.summary.objectsCount} об&apos;єктів, {result.summary.expertsCount} експертів
+            {normalizedInput.objects.length} об&apos;єктів, {normalizedInput.experts.length} експертів
           </div>
-          <div style={{ marginTop: 10, color: "#17324d", fontWeight: 700 }}>
-            Перебрано: {result.summary.permutationsEvaluated.toLocaleString("uk-UA")}
-          </div>
+          {result ? (
+            <div style={{ marginTop: 10, color: "#17324d", fontWeight: 700 }}>
+              Перебрано: {result.summary.permutationsEvaluated.toLocaleString("uk-UA")}
+            </div>
+          ) : (
+            <div style={{ marginTop: 10, color: "#17324d", fontWeight: 700 }}>
+              Прямий перебір вимкнений для 50 об&apos;єктів
+            </div>
+          )}
         </div>
       </header>
 
       <section style={sectionStyle}>
-        <SurveyMatrixTable labels={result.surveyMatrix.labels} rows={result.surveyMatrix.rows} />
-        <RankMatrixTable labels={result.surveyMatrix.labels} rows={result.rankMatrix} />
+        <SurveyMatrixTable labels={surveyMatrix.labels} rows={surveyMatrix.rows} />
+        <RankMatrixTable labels={surveyMatrix.labels} rows={rankMatrix} />
       </section>
 
       <section style={sectionStyle}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 12,
-          }}
-        >
-          <div style={{ border: "1px solid #e1e7ee", borderRadius: 14, padding: 14 }}>
-            <div style={{ color: "#52606d", fontSize: 13 }}>Перестановок перевірено</div>
-            <div style={{ marginTop: 6, fontSize: 26, fontWeight: 800 }}>
-              {result.summary.permutationsEvaluated.toLocaleString("uk-UA")}
+        {result ? (
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: 12,
+              }}
+            >
+              <div style={{ border: "1px solid #e1e7ee", borderRadius: 14, padding: 14 }}>
+                <div style={{ color: "#52606d", fontSize: 13 }}>Перестановок перевірено</div>
+                <div style={{ marginTop: 6, fontSize: 26, fontWeight: 800 }}>
+                  {result.summary.permutationsEvaluated.toLocaleString("uk-UA")}
+                </div>
+              </div>
+              <div style={{ border: "1px solid #e1e7ee", borderRadius: 14, padding: 14 }}>
+                <div style={{ color: "#52606d", fontSize: 13 }}>Мінімум sum</div>
+                <div style={{ marginTop: 6, fontSize: 26, fontWeight: 800 }}>{result.summary.minSum}</div>
+                <div style={{ marginTop: 6, color: "#52606d", fontSize: 13 }}>
+                  Відповідний max: {bestSumCompanionMax}
+                </div>
+              </div>
+              <div style={{ border: "1px solid #e1e7ee", borderRadius: 14, padding: 14 }}>
+                <div style={{ color: "#52606d", fontSize: 13 }}>Мінімум max</div>
+                <div style={{ marginTop: 6, fontSize: 26, fontWeight: 800 }}>{result.summary.minMax}</div>
+                <div style={{ marginTop: 6, color: "#52606d", fontSize: 13 }}>
+                  Відповідний sum: {bestMaxCompanionSum}
+                </div>
+              </div>
+              <div style={{ border: "1px solid #e1e7ee", borderRadius: 14, padding: 14 }}>
+                <div style={{ color: "#52606d", fontSize: 13 }}>Час розрахунку</div>
+                <div style={{ marginTop: 6, fontSize: 26, fontWeight: 800 }}>{result.summary.durationMs} мс</div>
+              </div>
             </div>
-          </div>
-          <div style={{ border: "1px solid #e1e7ee", borderRadius: 14, padding: 14 }}>
-            <div style={{ color: "#52606d", fontSize: 13 }}>Мінімум sum</div>
-            <div style={{ marginTop: 6, fontSize: 26, fontWeight: 800 }}>{result.summary.minSum}</div>
-          </div>
-          <div style={{ border: "1px solid #e1e7ee", borderRadius: 14, padding: 14 }}>
-            <div style={{ color: "#52606d", fontSize: 13 }}>Мінімум max</div>
-            <div style={{ marginTop: 6, fontSize: 26, fontWeight: 800 }}>{result.summary.minMax}</div>
-          </div>
-          <div style={{ border: "1px solid #e1e7ee", borderRadius: 14, padding: 14 }}>
-            <div style={{ color: "#52606d", fontSize: 13 }}>Час розрахунку</div>
-            <div style={{ marginTop: 6, fontSize: 26, fontWeight: 800 }}>{result.summary.durationMs} мс</div>
-          </div>
-        </div>
 
-        <PermutationsTable
-          title="Оптимальні перестановки за критерієм sum"
-          subtitle={
-            result.bestBySum.length > MAX_VISIBLE_OPTIMAL_ROWS
-              ? `Показано перші ${MAX_VISIBLE_OPTIMAL_ROWS} з ${result.bestBySum.length} оптимальних перестановок.`
-              : `Усього оптимальних перестановок: ${result.bestBySum.length}.`
-          }
-          rows={visibleBestBySum}
-          labels={result.surveyMatrix.labels}
-        />
+            <PermutationsTable
+              title="Оптимальні перестановки за критерієм sum"
+              subtitle={
+                result.bestBySum.length > MAX_VISIBLE_OPTIMAL_ROWS
+                  ? `Показано перші ${MAX_VISIBLE_OPTIMAL_ROWS} з ${result.bestBySum.length} оптимальних перестановок.`
+                  : `Усього оптимальних перестановок: ${result.bestBySum.length}.`
+              }
+              rows={visibleBestBySum}
+              labels={result.surveyMatrix.labels}
+            />
 
-        <PermutationsTable
-          title="Оптимальні перестановки за критерієм max"
-          subtitle={
-            result.bestByMax.length > MAX_VISIBLE_OPTIMAL_ROWS
-              ? `Показано перші ${MAX_VISIBLE_OPTIMAL_ROWS} з ${result.bestByMax.length} оптимальних перестановок.`
-              : `Усього оптимальних перестановок: ${result.bestByMax.length}.`
-          }
-          rows={visibleBestByMax}
-          labels={result.surveyMatrix.labels}
-        />
+            <PermutationsTable
+              title="Оптимальні перестановки за критерієм max"
+              subtitle={
+                result.bestByMax.length > MAX_VISIBLE_OPTIMAL_ROWS
+                  ? `Показано перші ${MAX_VISIBLE_OPTIMAL_ROWS} з ${result.bestByMax.length} оптимальних перестановок.`
+                  : `Усього оптимальних перестановок: ${result.bestByMax.length}.`
+              }
+              rows={visibleBestByMax}
+              labels={result.surveyMatrix.labels}
+            />
+          </>
+        ) : (
+          <div
+            style={{
+              border: "1px solid #d9e4f2",
+              borderRadius: 16,
+              padding: 16,
+              background: "#f8fbff",
+              color: "#355070",
+              lineHeight: 1.6,
+            }}
+          >
+            У режимі <b>100 експертів / 50 об&apos;єктів</b> прямий перебір не запускається, тому що кількість
+            перестановок дорівнює <b>50!</b> і є обчислювально нереальною. Для цього режиму доступний лише генетичний
+            алгоритм.
+          </div>
+        )}
 
-        <GeneticResultsPanel
-          result={geneticResult}
-          objectLabels={objectLabels}
-        />
+        <GeneticResultsPanel result={geneticResult} objectLabels={objectLabels} />
       </section>
     </main>
   );
